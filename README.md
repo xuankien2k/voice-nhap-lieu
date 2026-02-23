@@ -43,6 +43,18 @@ npm run tauri build
 5. Nói vào microphone
 6. Nhấn lại **⌘⇧Space** / **Ctrl+Shift+Space** để **dừng** và chuyển giọng nói thành văn bản
 
+## Cài đặt (Settings)
+
+Nhấn nút **⚙️ Cài đặt** để mở:
+
+- **Chế độ thu âm**
+  - **Toggle**: Nhấn phím tắt để bật thu âm, nhấn lại để tắt
+  - **Push-to-talk**: Giữ phím tắt để nói, thả ra để tự động lưu/nhập
+- **Phím tắt**: Đổi tổ hợp phím thu âm – nhấn "Đổi phím tắt" rồi nhấn tổ hợp phím mới
+- **Cách xuất văn bản**: Lưu vào clipboard hoặc tự động nhập tại con trỏ
+
+Cài đặt được lưu tự động khi thay đổi.
+
 ## Quyền trên macOS
 
 | Quyền            | Mục đích                          |
