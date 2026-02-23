@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:  # Cho phép chạy thủ công từ tab Actions
 
 permissions:
   contents: write
@@ -52,6 +53,6 @@ jobs:
             - **Windows**: file `.exe` (cài đặt 64-bit)
             - **macOS (Apple Silicon)**: file `.dmg` - target aarch64
             - **macOS (Intel)**: file `.dmg` - target x86_64
-          releaseDraft: true
+          releaseDraft: ${{ github.event_name != 'workflow_dispatch' }}
           args: ${{ matrix.args }}
           tauriScript: npm run tauri
