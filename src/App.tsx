@@ -4,6 +4,7 @@ import { writeText } from '@tauri-apps/plugin-clipboard-manager'
 import { register, unregister } from '@tauri-apps/plugin-global-shortcut'
 import { useSettings, type OutputMode, type RecordingMode } from './hooks/useSettings'
 import { keyEventToShortcut, formatShortcutForDisplay } from './utils/hotkey'
+import { convertVietnameseNumbersToDigits } from './utils/convertNumbers'
 import './App.css'
 
 // Web Speech API types
@@ -53,7 +54,7 @@ const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechReco
 
 function App() {
   const { settings, loaded, updateSetting } = useSettings()
-  const { outputMode, recordingMode, hotkey } = settings
+  const { outputMode, recordingMode, hotkey, convertNumbers, realtimeFill } = settings
 
   const [showSettings, setShowSettings] = useState(false)
   const [isRecording, setIsRecording] = useState(false)
@@ -65,23 +66,33 @@ function App() {
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const finalTranscriptRef = useRef('')
   const shouldProcessRef = useRef(false)
+  const realtimeTypeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const realtimeLastTypedLengthRef = useRef(0)
+  const realtimeTranscriptRef = useRef('')
+
+  const applyNumberConversion = useCallback(
+    (text: string) => (convertNumbers ? convertVietnameseNumbersToDigits(text) : text),
+    [convertNumbers]
+  )
 
   const processResult = useCallback(
     async (text: string) => {
-      const trimmed = text.trim()
+      const converted = applyNumberConversion(text)
+      const trimmed = converted.trim()
       if (!trimmed) {
         setStatus('Không có văn bản để xử lý')
         return
       }
 
+      const output = trimmed + ' '
       setStatus('Đang xử lý...')
 
       try {
         if (outputMode === 'clipboard') {
           if (isTauri() && typeof writeText === 'function') {
-            await writeText(trimmed)
+            await writeText(output)
           } else if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(trimmed)
+            await navigator.clipboard.writeText(output)
           } else {
             throw new Error('Không thể truy cập clipboard.')
           }
@@ -90,7 +101,7 @@ function App() {
           if (!isTauri() || typeof invoke !== 'function') {
             throw new Error('Chế độ "Tự động nhập" chỉ hoạt động khi chạy ứng dụng Tauri (npm run tauri dev).')
           }
-          await invoke('simulate_keyboard_type', { text: trimmed })
+          await invoke('simulate_keyboard_type', { text: output })
           setStatus('Đã nhập tại vị trí con trỏ!')
         }
       } catch (err) {
@@ -104,7 +115,7 @@ function App() {
         }
       }
     },
-    [outputMode]
+    [outputMode, applyNumberConversion]
   )
 
   const stopRecording = useCallback(() => {
@@ -124,6 +135,11 @@ function App() {
     setError(null)
     setTranscript('')
     finalTranscriptRef.current = ''
+    realtimeLastTypedLengthRef.current = 0
+    if (realtimeTypeTimeoutRef.current) {
+      clearTimeout(realtimeTypeTimeoutRef.current)
+      realtimeTypeTimeoutRef.current = null
+    }
 
     const recognition = new SpeechRecognitionAPI()
     recognition.continuous = true
@@ -141,7 +157,23 @@ function App() {
           interimTranscript += alt.transcript
         }
       }
-      setTranscript(finalTranscriptRef.current + interimTranscript)
+      const fullTranscript = finalTranscriptRef.current + interimTranscript
+      realtimeTranscriptRef.current = fullTranscript
+      setTranscript(fullTranscript)
+
+      if (realtimeFill && outputMode === 'type' && isTauri() && typeof invoke === 'function') {
+        if (realtimeTypeTimeoutRef.current) clearTimeout(realtimeTypeTimeoutRef.current)
+        realtimeTypeTimeoutRef.current = setTimeout(() => {
+          realtimeTypeTimeoutRef.current = null
+          const current = realtimeTranscriptRef.current
+          const converted = convertNumbers ? convertVietnameseNumbersToDigits(current) : current
+          const toType = converted.slice(realtimeLastTypedLengthRef.current)
+          if (toType) {
+            invoke('simulate_keyboard_type', { text: toType }).catch(() => {})
+            realtimeLastTypedLengthRef.current = converted.length
+          }
+        }, 1000)
+      }
     }
 
     recognition.onerror = (event: Event) => {
@@ -156,11 +188,27 @@ function App() {
     }
 
     recognition.onend = () => {
+      if (realtimeTypeTimeoutRef.current) {
+        clearTimeout(realtimeTypeTimeoutRef.current)
+        realtimeTypeTimeoutRef.current = null
+      }
+      if (realtimeFill && outputMode === 'type' && isTauri() && typeof invoke === 'function') {
+        const current = realtimeTranscriptRef.current
+        const converted = convertNumbers ? convertVietnameseNumbersToDigits(current) : current
+        const toType = converted.slice(realtimeLastTypedLengthRef.current)
+        if (toType) {
+          invoke('simulate_keyboard_type', { text: toType + ' ' }).catch(() => {})
+        }
+      }
       if (shouldProcessRef.current) {
         shouldProcessRef.current = false
         const text = finalTranscriptRef.current.trim()
         if (text) {
-          processResult(text)
+          if (realtimeFill && outputMode === 'type') {
+            setStatus('Đã gõ xong tại vị trí con trỏ')
+          } else {
+            processResult(text)
+          }
         } else {
           setStatus('Không nhận diện được giọng nói')
         }
@@ -171,8 +219,8 @@ function App() {
     recognitionRef.current = recognition
     recognition.start()
     setIsRecording(true)
-    setStatus('Đang thu âm... Nói vào microphone')
-  }, [processResult])
+    setStatus(realtimeFill ? 'Đang thu âm... Gõ trực tiếp tại con trỏ' : 'Đang thu âm... Nói vào microphone')
+  }, [processResult, realtimeFill, outputMode, convertNumbers])
 
   const toggleRecording = useCallback(() => {
     if (isRecording) {
@@ -336,6 +384,32 @@ function App() {
               </label>
             </div>
           </div>
+
+          <div className="setting-group switch-group">
+            <label className="switch-label">
+              <input
+                type="checkbox"
+                checked={convertNumbers}
+                onChange={(e) => updateSetting('convertNumbers', e.target.checked)}
+              />
+              <span className="switch-slider" />
+              <span>Đọc số (tám → 8, chấm → ., phẩy → ,)</span>
+            </label>
+            <p className="switch-desc">Chuyển từ số tiếng Việt sang chữ số khi nhận diện</p>
+          </div>
+
+          <div className="setting-group switch-group">
+            <label className="switch-label">
+              <input
+                type="checkbox"
+                checked={realtimeFill}
+                onChange={(e) => updateSetting('realtimeFill', e.target.checked)}
+              />
+              <span className="switch-slider" />
+              <span>Gõ trực tiếp khi nghe</span>
+            </label>
+            <p className="switch-desc">Đọc đến đâu gõ ngay vào vị trí con trỏ. Cần chọn &quot;Tự động nhập tại con trỏ&quot;.</p>
+          </div>
         </section>
       )}
 
@@ -399,16 +473,32 @@ function App() {
           {transcript && (
             <div className="transcript">
               <strong>Văn bản nhận diện:</strong>
-              <p>{transcript}</p>
+              <p>{applyNumberConversion(transcript)}</p>
             </div>
           )}
         </section>
       )}
 
+      {isTauri() && navigator.platform.includes('Mac') && (
+        <section className="accessibility-notice">
+          <div className="notice-content">
+            <strong>⚠️ Phím tắt khi dùng app khác (Chrome, Excel...):</strong>
+            <p>Để phím tắt hoạt động khi bạn đang mở Chrome, Excel hay app khác, <strong>bắt buộc</strong> cấp quyền <strong>Accessibility</strong> cho app này.</p>
+            <button
+              type="button"
+              className="open-settings-btn"
+              onClick={() => invoke('open_accessibility_settings')}
+            >
+              Mở cài đặt Accessibility
+            </button>
+            <p className="notice-steps">System Settings → Privacy & Security → Accessibility → Thêm &quot;Voice Nhập Liệu&quot; và bật quyền</p>
+          </div>
+        </section>
+      )}
+
       <footer className="footer">
         <p>
-          <strong>Lưu ý macOS:</strong> Chế độ &quot;Tự động nhập&quot; cần quyền <strong>Accessibility</strong> trong
-          System Settings → Privacy & Security.
+          <strong>Lưu ý macOS:</strong> Chế độ &quot;Tự động nhập&quot; cần quyền <strong>Accessibility</strong>. Phím tắt từ app khác cũng cần quyền này.
         </p>
       </footer>
     </div>

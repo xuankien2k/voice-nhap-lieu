@@ -158,6 +158,62 @@
   color: #f87171;
 }
 
+.switch-group {
+  margin-top: 1rem;
+}
+
+.switch-label {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #e2e8f0;
+}
+
+.switch-label input {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.switch-slider {
+  position: relative;
+  display: inline-block;
+  width: 44px;
+  height: 24px;
+  background: #334155;
+  border-radius: 24px;
+  transition: background 0.2s;
+}
+
+.switch-slider::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  left: 2px;
+  top: 2px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+
+.switch-label input:checked + .switch-slider {
+  background: #0ea5e9;
+}
+
+.switch-label input:checked + .switch-slider::after {
+  transform: translateX(20px);
+}
+
+.switch-desc {
+  margin: 0.35rem 0 0 3rem;
+  font-size: 0.85rem;
+  color: #94a3b8;
+}
+
 .hotkey-hint {
   font-size: 0.8rem;
   color: #94a3b8;
@@ -303,6 +359,47 @@
   line-height: 1.6;
 }
 
+.accessibility-notice {
+  margin-top: 1rem;
+  padding: 1rem;
+  border-radius: 12px;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.notice-content strong {
+  color: #f59e0b;
+}
+
+.notice-content p {
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  color: #e2e8f0;
+}
+
+.open-settings-btn {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem;
+  font-size: 0.9rem;
+  background: #f59e0b;
+  color: #1e293b;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.open-settings-btn:hover {
+  background: #fbbf24;
+}
+
+.notice-steps {
+  font-size: 0.8rem !important;
+  color: #94a3b8 !important;
+  margin-top: 0.75rem !important;
+}
+
 .footer {
   margin-top: auto;
   padding-top: 2rem;
@@ -405,5 +502,34 @@
     background: #fff;
     border-color: #e2e8f0;
     color: #1e293b;
+  }
+
+  .accessibility-notice {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.35);
+  }
+
+  .notice-content p {
+    color: #334155;
+  }
+
+  .notice-steps {
+    color: #64748b !important;
+  }
+
+  .switch-label {
+    color: #1e293b;
+  }
+
+  .switch-desc {
+    color: #64748b;
+  }
+
+  .switch-slider {
+    background: #cbd5e1;
+  }
+
+  .switch-label input:checked + .switch-slider {
+    background: #0284c7;
   }
 }

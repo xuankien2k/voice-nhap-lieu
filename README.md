@@ -30,8 +30,11 @@ npm install
 # Chạy development
 npm run tauri dev
 
-# Build production
+# Build app cài đặt được (tạo file .app trên macOS / .exe trên Windows)
 npm run tauri build
+
+# Hoặc dùng script rút gọn:
+npm run build:app
 ```
 
 ## Cách dùng
@@ -84,6 +87,17 @@ Hiện dùng **Web Speech API** (mặc định của trình duyệt). Có thể 
 
 - **OpenAI Whisper API** – chất lượng tốt, cần API key
 - **faster-whisper** – chạy local, offline
+
+## Build & Cài đặt app
+
+Sau khi chạy `npm run tauri build`, file app nằm tại:
+
+| Hệ điều hành | Đường dẫn |
+|--------------|-----------|
+| **macOS** | `src-tauri/target/release/bundle/macos/Voice Nhập Liệu.app` |
+| **Windows** | `src-tauri/target/release/bundle/nsis/Voice Nhập Liệu_0.1.0_x64-setup.exe` |
+
+Kéo file `.app` vào **Applications** (macOS) hoặc chạy file cài đặt (Windows).
 
 ## License
 

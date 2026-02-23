@@ -9,12 +9,16 @@ export interface AppSettings {
   outputMode: OutputMode
   recordingMode: RecordingMode
   hotkey: string
+  convertNumbers: boolean
+  realtimeFill: boolean
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
   outputMode: 'clipboard',
   recordingMode: 'toggle',
   hotkey: 'CommandOrControl+Shift+Space',
+  convertNumbers: true,
+  realtimeFill: false,
 }
 
 const STORE_KEY = 'app-settings'

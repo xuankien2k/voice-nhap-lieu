@@ -4,5 +4,7 @@
 <dict>
     <key>NSMicrophoneUsageDescription</key>
     <string>Ứng dụng cần quyền microphone để thu âm giọng nói và chuyển thành văn bản nhập liệu.</string>
+    <key>NSSpeechRecognitionUsageDescription</key>
+    <string>Ứng dụng cần quyền nhận diện giọng nói để chuyển lời nói thành văn bản khi bạn thu âm.</string>
 </dict>
 </plist>

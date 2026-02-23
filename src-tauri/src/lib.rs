@@ -7,9 +7,27 @@ pub fn run() {
         .plugin(tauri_plugin_store::Builder::default().build())
         .plugin(tauri_plugin_log::Builder::default().build())
         .plugin(tauri_plugin_global_shortcut::Builder::new().build())
-        .invoke_handler(tauri::generate_handler![simulate_keyboard_type])
+        .invoke_handler(tauri::generate_handler![simulate_keyboard_type, open_accessibility_settings])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// Open macOS System Settings to Accessibility pane so user can add app.
+#[tauri::command]
+fn open_accessibility_settings() -> Result<(), String> {
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    {
+        let _ = ();
+        // Windows: Settings > Privacy > Accessibility - no direct URL
+    }
+    Ok(())
 }
 
 /// Simulate typing text at the current cursor position using keyboard.
