@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Voice Nhập Liệu - Tải xuống</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎤</text></svg>">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+      max-width: 640px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem;
+      background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+      color: #e2e8f0;
+      min-height: 100vh;
+    }
+    h1 {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.75rem;
+      margin-bottom: 0.5rem;
+    }
+    .subtitle {
+      color: #94a3b8;
+      font-size: 1rem;
+      margin-bottom: 2rem;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.8);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+    }
+    .card h2 {
+      font-size: 1.1rem;
+      margin: 0 0 1rem;
+      color: #f8fafc;
+    }
+    .download-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      background: #3b82f6;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+    }
+    .download-btn:hover {
+      background: #2563eb;
+    }
+    .download-btn:disabled {
+      background: #64748b;
+      cursor: not-allowed;
+    }
+    .platform {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 0;
+      border-bottom: 1px solid #334155;
+    }
+    .platform:last-child { border-bottom: none; }
+    .platform-info {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+    .platform-icon {
+      font-size: 2rem;
+    }
+    .platform-name { font-weight: 600; }
+    .platform-desc { font-size: 0.875rem; color: #94a3b8; }
+    .loading {
+      color: #94a3b8;
+      font-style: italic;
+    }
+    .error {
+      color: #f87171;
+      font-size: 0.9rem;
+    }
+    .version {
+      font-size: 0.875rem;
+      color: #94a3b8;
+      margin-bottom: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎤 Voice Nhập Liệu</h1>
+  <p class="subtitle">Nhập liệu bằng giọng nói – chuyển tiếng nói thành văn bản</p>
+
+  <div class="card">
+    <h2>📥 Tải xuống</h2>
+    <p class="version" id="version">Đang tải thông tin phiên bản...</p>
+    <div id="downloads">
+      <div class="platform">
+        <div class="platform-info">
+          <span class="platform-icon">🪟</span>
+          <div>
+            <div class="platform-name">Windows</div>
+            <div class="platform-desc">File cài đặt .exe (64-bit)</div>
+          </div>
+        </div>
+        <a id="win-download" class="download-btn" href="#" disabled>Tải xuống</a>
+      </div>
+      <div class="platform">
+        <div class="platform-info">
+          <span class="platform-icon">🍎</span>
+          <div>
+            <div class="platform-name">macOS</div>
+            <div class="platform-desc">File .dmg (Intel & Apple Silicon)</div>
+          </div>
+        </div>
+        <a id="mac-download" class="download-btn" href="#" disabled>Tải xuống</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>📖 Hướng dẫn</h2>
+    <p><strong>Windows:</strong> Chạy file .exe và làm theo hướng dẫn cài đặt.</p>
+    <p><strong>macOS:</strong> Mở file .dmg, kéo app vào thư mục Applications.</p>
+    <p style="margin-bottom: 0; font-size: 0.9rem; color: #94a3b8;">
+      Cần quyền Microphone và (trên macOS) Accessibility để gõ tự động.
+    </p>
+  </div>
+
+  <script>
+    const REPO = 'xuankien2k/voice-nhap-lieu';
+    const API_URL = `https://api.github.com/repos/${REPO}/releases/latest`;
+
+    async function fetchLatestRelease() {
+      try {
+        const res = await fetch(API_URL);
+        if (!res.ok) throw new Error('Không tìm thấy release');
+        const data = await res.json();
+        return data;
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    }
+
+    function findAsset(assets, patterns) {
+      for (const p of patterns) {
+        const found = assets.find(a => p.test(a.name));
+        if (found) return found;
+      }
+      return null;
+    }
+
+    (async () => {
+      const release = await fetchLatestRelease();
+      const versionEl = document.getElementById('version');
+      const winBtn = document.getElementById('win-download');
+      const macBtn = document.getElementById('mac-download');
+
+      if (!release) {
+        versionEl.textContent = 'Chưa có phiên bản phát hành.';
+        winBtn.textContent = 'Chưa có';
+        macBtn.textContent = 'Chưa có';
+        return;
+      }
+
+      versionEl.textContent = `Phiên bản mới nhất: ${release.tag_name}`;
+
+      const winAsset = findAsset(release.assets, [
+        /\.exe$/i,
+        /windows.*\.msi$/i,
+        /nsis.*setup/i
+      ]);
+      const macAsset = findAsset(release.assets, [
+        /\.dmg$/i,
+        /macos.*\.dmg/i
+      ]);
+
+      if (winAsset) {
+        winBtn.href = winAsset.browser_download_url;
+        winBtn.removeAttribute('disabled');
+        winBtn.textContent = 'Tải xuống';
+      } else {
+        winBtn.textContent = 'Chưa có';
+      }
+
+      if (macAsset) {
+        macBtn.href = macAsset.browser_download_url;
+        macBtn.removeAttribute('disabled');
+        macBtn.textContent = 'Tải xuống';
+      } else {
+        macBtn.textContent = 'Chưa có';
+      }
+    })();
+  </script>
+</body>
+</html>

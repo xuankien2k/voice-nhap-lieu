@@ -99,6 +99,27 @@ Sau khi chạy `npm run tauri build`, file app nằm tại:
 
 Kéo file `.app` vào **Applications** (macOS) hoặc chạy file cài đặt (Windows).
 
+## Trang tải xuống & Phát hành
+
+**Trang tải:** [xuankien2k.github.io/voice-nhap-lieu](https://xuankien2k.github.io/voice-nhap-lieu/)
+
+### Bật GitHub Pages
+1. Đẩy repo lên GitHub (vd: `xuankien2k/voice-nhap-lieu`)
+2. Vào **Settings → Pages**
+3. **Source**: Deploy from a branch
+4. **Branch**: main, thư mục `/docs`
+
+### Phát hành phiên bản mới
+1. Cập nhật version trong `src-tauri/tauri.conf.json` và `package.json` (nếu cần)
+2. Tạo tag và đẩy lên GitHub:
+   ```bash
+   git tag v0.1.0
+   git push origin v0.1.0
+   ```
+3. GitHub Actions sẽ build cho **Windows** và **macOS** (Intel + Apple Silicon) rồi tạo Draft Release
+4. Vào **Releases** → mở Draft → Publish release
+5. Trang tải sẽ tự lấy link từ release mới nhất
+
 ## License
 
 MIT

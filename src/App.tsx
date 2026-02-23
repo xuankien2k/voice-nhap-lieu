@@ -63,6 +63,7 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [capturingHotkey, setCapturingHotkey] = useState(false)
   const [hotkeyError, setHotkeyError] = useState<string | null>(null)
+  const [conversionLogs, setConversionLogs] = useState<Array<{ input: string; output: string }>>([])
   const recognitionRef = useRef<SpeechRecognition | null>(null)
   const finalTranscriptRef = useRef('')
   const shouldProcessRef = useRef(false)
@@ -74,6 +75,13 @@ function App() {
     (text: string) => (convertNumbers ? convertVietnameseNumbersToDigits(text) : text),
     [convertNumbers]
   )
+
+  useEffect(() => {
+    if (convertNumbers && transcript) {
+      const result = convertVietnameseNumbersToDigits(transcript)
+      setConversionLogs((prev) => [...prev.slice(-19), { input: transcript, output: result }])
+    }
+  }, [transcript, convertNumbers])
 
   const processResult = useCallback(
     async (text: string) => {
@@ -104,6 +112,11 @@ function App() {
           await invoke('simulate_keyboard_type', { text: output })
           setStatus('Đã nhập tại vị trí con trỏ!')
         }
+        setTranscript('')
+        setConversionLogs([])
+        finalTranscriptRef.current = ''
+        realtimeTranscriptRef.current = ''
+        realtimeLastTypedLengthRef.current = 0
       } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
         setError(msg)
@@ -134,6 +147,7 @@ function App() {
 
     setError(null)
     setTranscript('')
+    setConversionLogs([])
     finalTranscriptRef.current = ''
     realtimeLastTypedLengthRef.current = 0
     if (realtimeTypeTimeoutRef.current) {
@@ -152,9 +166,9 @@ function App() {
         const result = event.results[i]
         const alt = result[0]
         if (result.isFinal) {
-          finalTranscriptRef.current += alt.transcript
+          finalTranscriptRef.current += alt.transcript + ' '
         } else {
-          interimTranscript += alt.transcript
+          interimTranscript += alt.transcript + ' '
         }
       }
       const fullTranscript = finalTranscriptRef.current + interimTranscript
@@ -192,6 +206,10 @@ function App() {
         clearTimeout(realtimeTypeTimeoutRef.current)
         realtimeTypeTimeoutRef.current = null
       }
+      const text = finalTranscriptRef.current.trim()
+      const shouldProcess = shouldProcessRef.current
+      shouldProcessRef.current = false
+
       if (realtimeFill && outputMode === 'type' && isTauri() && typeof invoke === 'function') {
         const current = realtimeTranscriptRef.current
         const converted = convertNumbers ? convertVietnameseNumbersToDigits(current) : current
@@ -200,9 +218,14 @@ function App() {
           invoke('simulate_keyboard_type', { text: toType + ' ' }).catch(() => {})
         }
       }
-      if (shouldProcessRef.current) {
-        shouldProcessRef.current = false
-        const text = finalTranscriptRef.current.trim()
+
+      setTranscript('')
+      setConversionLogs([])
+      finalTranscriptRef.current = ''
+      realtimeTranscriptRef.current = ''
+      realtimeLastTypedLengthRef.current = 0
+
+      if (shouldProcess) {
         if (text) {
           if (realtimeFill && outputMode === 'type') {
             setStatus('Đã gõ xong tại vị trí con trỏ')
@@ -285,6 +308,7 @@ function App() {
   }, [capturingHotkey, updateSetting])
 
   return (
+    <div className="container">
     <div className="app">
       <header className="header">
         <h1>🎤 Voice Nhập Liệu</h1>
@@ -474,6 +498,18 @@ function App() {
             <div className="transcript">
               <strong>Văn bản nhận diện:</strong>
               <p>{applyNumberConversion(transcript)}</p>
+              {conversionLogs.length > 0 && (
+                <div className="conversion-log">
+                  <strong>Debug convertNumbers:</strong>
+                  <pre>
+                    {conversionLogs.map((log, i) => (
+                      <div key={i}>
+                        Đầu vào: {JSON.stringify(log.input)} → Sau convert: {JSON.stringify(log.output)}
+                      </div>
+                    ))}
+                  </pre>
+                </div>
+              )}
             </div>
           )}
         </section>
@@ -501,6 +537,7 @@ function App() {
           <strong>Lưu ý macOS:</strong> Chế độ &quot;Tự động nhập&quot; cần quyền <strong>Accessibility</strong>. Phím tắt từ app khác cũng cần quyền này.
         </p>
       </footer>
+    </div>
     </div>
   )
 }
