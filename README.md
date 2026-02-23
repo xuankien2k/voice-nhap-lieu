@@ -1,0 +1,78 @@
+# 🎤 Voice Nhập Liệu
+
+Ứng dụng desktop nhập liệu bằng giọng nói, chạy trên **Windows** và **macOS**. Thu âm qua microphone, chuyển thành văn bản (Speech-to-Text), rồi:
+
+1. **Lưu vào khay nhớ tạm** – sao chép để dán (Ctrl+V/⌘V) vào bất kỳ đâu  
+2. **Tự động nhập tại vị trí con trỏ** – gõ trực tiếp vào Excel, Word, VSCode, v.v.
+
+## Công nghệ
+
+- **Tauri 2** + **React** + **TypeScript**
+- **Web Speech API** cho Speech-to-Text
+- **Enigo** (Rust) mô phỏng gõ phím
+- **Global Hotkey**: `Ctrl+Shift+Space` (Windows) / `⌘⇧Space` (macOS)
+
+## Yêu cầu
+
+- **Node.js** 20+ hoặc 22.12+
+- **Rust** (cài qua [rustup](https://rustup.rs/))
+- **macOS**: quyền Microphone và **Accessibility** (cho chế độ tự động nhập)
+
+## Cài đặt
+
+```bash
+# Clone và vào thư mục
+cd voice-nhap-lieu
+
+# Cài npm dependencies (đã chạy nếu tạo project mới)
+npm install
+
+# Chạy development
+npm run tauri dev
+
+# Build production
+npm run tauri build
+```
+
+## Cách dùng
+
+1. Mở ứng dụng (hoặc để chạy nền)
+2. Chọn chế độ xuất: **Clipboard** hoặc **Tự động nhập tại con trỏ**
+3. Đặt con trỏ chuột tại vị trí muốn nhập (Excel, Word, v.v.)
+4. Nhấn **⌘⇧Space** (macOS) hoặc **Ctrl+Shift+Space** (Windows) để **bắt đầu thu âm**
+5. Nói vào microphone
+6. Nhấn lại **⌘⇧Space** / **Ctrl+Shift+Space** để **dừng** và chuyển giọng nói thành văn bản
+
+## Quyền trên macOS
+
+| Quyền            | Mục đích                          |
+|------------------|-----------------------------------|
+| **Microphone**   | Thu âm giọng nói                  |
+| **Accessibility**| Gõ văn bản tại vị trí con trỏ     |
+
+Vào **System Settings → Privacy & Security → Accessibility** và thêm ứng dụng nếu chế độ “Tự động nhập” không hoạt động.
+
+## Cấu trúc project
+
+```
+voice-nhap-lieu/
+├── src/                 # React frontend
+│   ├── App.tsx          # UI + logic thu âm, STT, gọi backend
+│   └── ...
+├── src-tauri/           # Tauri backend (Rust)
+│   ├── src/
+│   │   └── lib.rs       # simulate_keyboard_type, global shortcut
+│   └── ...
+└── ...
+```
+
+## Mở rộng (STT)
+
+Hiện dùng **Web Speech API** (mặc định của trình duyệt). Có thể thêm:
+
+- **OpenAI Whisper API** – chất lượng tốt, cần API key
+- **faster-whisper** – chạy local, offline
+
+## License
+
+MIT
